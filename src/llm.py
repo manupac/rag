@@ -14,6 +14,10 @@ MAX_RETRIES = 5
 RETRY_WAIT_SECONDS = 30
 
 
+class DailyQuotaError(Exception):
+    """The daily quota is used up: waiting won't help, try again tomorrow."""
+
+
 @cache
 def get_llm(model: str = LLM_MODEL) -> ChatGoogleGenerativeAI:
     # Temperature is not set: Google recommends keeping the default (1.0) for Gemini 3
@@ -39,12 +43,21 @@ def text_of(message) -> str:
 
 
 def call_with_retry(fn, *args, **kwargs):
-    """Call fn, waiting and retrying when the API says the per-minute rate limit was hit."""
+    """Call fn, waiting and retrying on a per-minute rate limit.
+
+    A daily limit is raised at once as DailyQuotaError, because waiting 30 seconds
+    cannot fix a quota that resets in hours.
+    """
     for attempt in range(MAX_RETRIES):
         try:
             return fn(*args, **kwargs)
         except Exception as e:
-            if "RESOURCE_EXHAUSTED" not in str(e) or attempt == MAX_RETRIES - 1:
+            message = str(e)
+            if "RESOURCE_EXHAUSTED" not in message:
+                raise
+            if "PerDay" in message:
+                raise DailyQuotaError(message) from e
+            if attempt == MAX_RETRIES - 1:
                 raise
             print(f"Rate limit hit, waiting {RETRY_WAIT_SECONDS}s and retrying...")
             time.sleep(RETRY_WAIT_SECONDS)

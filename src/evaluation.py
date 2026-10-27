@@ -13,7 +13,11 @@ Questions come from eval/questions.json (generated) and eval/manual_questions.js
 (hand-written, optional). A question can have a "history": a list of earlier questions
 asked first in the same conversation, to test multi-turn follow-ups.
 
-Results are saved to eval/results.json.
+Results are saved to eval/results.json after every question. If the daily API quota runs
+out, the run stops cleanly; running 'eval' again later resumes where it stopped:
+finished questions are skipped, answered-but-unjudged ones are only judged, and failed
+ones are redone. Delete eval/results.json to start from scratch (do this after changing
+any setting that affects the answers, e.g. TOP_K).
 """
 
 import json
@@ -24,11 +28,13 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from chatbot import Chatbot
 from config import EVAL_PAUSE_SECONDS, EVAL_RESULTS_PATH
 from eval_dataset import load_manual_questions, load_questions
-from llm import call_with_retry, get_judge_llm, text_of
+from llm import DailyQuotaError, call_with_retry, get_judge_llm, text_of
 from router import BOTH, DATABASE, RULEBOOK
 
 RULES_ROUTES = {RULEBOOK, BOTH}
 DATA_ROUTES = {DATABASE, BOTH}
+
+QUOTA_MSG = "judge skipped: daily quota used up"
 
 JUDGE_SYSTEM = """You grade a chatbot's answer against a reference answer.
 
@@ -60,9 +66,32 @@ def judge(question: str, reference: str, answer: str) -> tuple[bool, str]:
     return verdict.startswith("CORRECT"), reply
 
 
-def evaluate_item(bot, item: dict, judge_fn=None) -> dict:
-    """Run one question (after its history, if any) through the bot and score it."""
+def grade(result: dict, judge_fn=None) -> dict:
+    """Judge result['answer'] and fill in 'correct' and 'judge_reply'.
+
+    Kept separate from answering, so an answer that was already generated is never
+    regenerated just because the judge failed.
+    """
     judge_fn = judge_fn or judge
+    try:
+        result["correct"], result["judge_reply"] = judge_fn(
+            result["question"], result["reference_answer"], result["answer"]
+        )
+    except DailyQuotaError:
+        result["correct"] = None
+        result["judge_reply"] = QUOTA_MSG  # main() sees this and stops the run
+    except Exception as e:  # noqa: BLE001 - a judge failure is recorded, not fatal
+        result["correct"] = None  # not counted
+        result["judge_reply"] = f"judge failed: {e}"
+    return result
+
+
+def evaluate_item(bot, item: dict, judge_fn=None) -> dict:
+    """Run one question (after its history, if any) through the bot and score it.
+
+    Raises DailyQuotaError if the bot's model hit its daily limit: the question is
+    then left undone and redone in the next run.
+    """
     result = {
         "id": item["id"],
         "question": item["question"],
@@ -86,6 +115,8 @@ def evaluate_item(bot, item: dict, judge_fn=None) -> dict:
         for previous in item.get("history", []):  # earlier turns, not scored
             call_with_retry(bot.ask, previous)
         response = call_with_retry(bot.ask, item["question"])
+    except DailyQuotaError:
+        raise  # not a failure of this question: main() stops the run
     except Exception as e:  # noqa: BLE001 - one failing question must not stop the run
         result.update(error=str(e))  # counted in n_errors, not as a wrong answer
         return result
@@ -103,12 +134,7 @@ def evaluate_item(bot, item: dict, judge_fn=None) -> dict:
     if result["route_ok"] and item["expected_route"] in DATA_ROUTES:
         result["sql_ok"] = response.sql is not None and response.sql.error is None and bool(response.sql.rows)
 
-    try:
-        result["correct"], result["judge_reply"] = judge_fn(item["question"], item["reference_answer"], response.answer)
-    except Exception as e:    # noqa: BLE001 - a judge failure is recorded, not fatal
-        result["judge_reply"] = f"judge failed: {e}"  # correct stays None: not counted
-
-    return result
+    return grade(result, judge_fn)
 
 
 def rate(values: list) -> dict:
@@ -122,6 +148,7 @@ def summarize(results: list[dict]) -> dict:
     return {
         "n_questions": len(results),
         "n_errors": sum(1 for r in results if r["error"]),
+        "n_unjudged": sum(1 for r in results if r["correct"] is None and not r["error"]),
         "routing_accuracy": rate([r["route_ok"] for r in results]),
         "routing_by_expected": {
             r: rate([x["route_ok"] for x in results if x["expected_route"] == r]) for r in (RULEBOOK, DATABASE, BOTH)
@@ -163,27 +190,68 @@ def print_summary(summary: dict) -> None:
     print(f"SQL success rate:   {format_rate(summary['sql_success_rate'])}  (database questions routed correctly)")
     print(f"Answer correctness: {format_rate(summary['answer_correctness'])}  (judged by the LLM)")
     print(f"  of which multi-turn: {format_rate(summary['multi_turn_correctness'])}")
+    if summary["n_unjudged"]:
+        print(f"WARNING: {summary['n_unjudged']} answers are not judged yet; the rates above exclude them.")
+
+
+def is_finished(result: dict | None) -> bool:
+    """Answered and judged: nothing left to do for this question."""
+    return bool(result) and not result["error"] and result["correct"] is not None
+
+
+def load_saved() -> dict:
+    """Results from earlier runs, by question id."""
+    if not EVAL_RESULTS_PATH.exists():
+        return {}
+    data = json.loads(EVAL_RESULTS_PATH.read_text(encoding="utf-8"))
+    return {r["id"]: r for r in data["results"]}
+
+
+def save(questions: list[dict], saved: dict) -> list[dict]:
+    """Write the results (in question order) and return them."""
+    results = [saved[q["id"]] for q in questions if q["id"] in saved]
+    EVAL_RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    EVAL_RESULTS_PATH.write_text(
+        json.dumps({"summary": summarize(results), "results": results}, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    return results
 
 
 def main():
     questions = load_questions() + load_manual_questions()
+    saved = load_saved()
     bot = Chatbot()
+    stopped = False
 
-    results = []
     for i, item in enumerate(questions, start=1):
-        result = evaluate_item(bot, item)
-        results.append(result)
+        old = saved.get(item["id"])
+        if is_finished(old):
+            continue  # finished in an earlier run
+
+        try:
+            if old and not old["error"] and old["answer"] is not None:
+                result = grade(old)  # answered before: only the judging is missing
+            else:
+                result = evaluate_item(bot, item)
+        except DailyQuotaError:
+            stopped = True
+            break
+
+        saved[item["id"]] = result
+        save(questions, saved)  # after every question, so nothing is lost
         print_item(i, len(questions), result)
-        if i < len(questions):
-            time.sleep(EVAL_PAUSE_SECONDS)  # stay under the free-tier rate limit
 
-    summary = summarize(results)
-    print_summary(summary)
+        if result["judge_reply"] == QUOTA_MSG:
+            stopped = True
+            break
+        time.sleep(EVAL_PAUSE_SECONDS)  # stay under the free-tier per-minute limit
 
-    EVAL_RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    EVAL_RESULTS_PATH.write_text(
-        json.dumps({"summary": summary, "results": results}, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    results = save(questions, saved)
+    print_summary(summarize(results))
+    if stopped:
+        remaining = sum(1 for q in questions if not is_finished(saved.get(q["id"])))
+        print(f"\nDaily quota used up. {remaining} questions still to do: run 'eval' again tomorrow.")
     print(f"\nFull results (answers, SQL, judge replies) saved to {EVAL_RESULTS_PATH}")
 
 
