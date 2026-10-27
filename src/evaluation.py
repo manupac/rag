@@ -25,7 +25,10 @@ from chatbot import Chatbot
 from config import EVAL_PAUSE_SECONDS, EVAL_RESULTS_PATH
 from eval_dataset import load_manual_questions, load_questions
 from llm import call_with_retry, get_judge_llm, text_of
-from router import DATABASE, RULEBOOK
+from router import BOTH, DATABASE, RULEBOOK
+
+RULES_ROUTES = {RULEBOOK, BOTH}
+DATA_ROUTES = {DATABASE, BOTH}
 
 JUDGE_SYSTEM = """You grade a chatbot's answer against a reference answer.
 
@@ -93,11 +96,11 @@ def evaluate_item(bot, item: dict, judge_fn=None) -> dict:
     result["answer"] = response.answer
 
     # hand-written questions have no source chunk, so retrieval can't be checked for them
-    if result["route_ok"] and item["expected_route"] == RULEBOOK and item.get("source_text"):
+    if result["route_ok"] and item["expected_route"] in RULES_ROUTES and item.get("source_text"):
         result["retrieval_hit"] = any(doc.page_content == item["source_text"] for doc in response.sources)
     if response.sql is not None:
         result["sql_query"] = response.sql.query
-    if result["route_ok"] and item["expected_route"] == DATABASE:
+    if result["route_ok"] and item["expected_route"] in DATA_ROUTES:
         result["sql_ok"] = response.sql is not None and response.sql.error is None and bool(response.sql.rows)
 
     try:
@@ -120,6 +123,9 @@ def summarize(results: list[dict]) -> dict:
         "n_questions": len(results),
         "n_errors": sum(1 for r in results if r["error"]),
         "routing_accuracy": rate([r["route_ok"] for r in results]),
+        "routing_by_expected": {
+            r: rate([x["route_ok"] for x in results if x["expected_route"] == r]) for r in (RULEBOOK, DATABASE, BOTH)
+        },
         "retrieval_hit_rate": rate([r["retrieval_hit"] for r in results]),
         "sql_success_rate": rate([r["sql_ok"] for r in results]),
         "answer_correctness": rate([r["correct"] for r in results]),

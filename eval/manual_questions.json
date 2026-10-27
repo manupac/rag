@@ -1,27 +1,27 @@
 [
-    {
-  "id": "t1",
-  "question": "What is the rule for grenades?",
-  "expected_route": "RULEBOOK",
-  "reference_answer": "Grenade is a 1 CP Core Wargear stratagem used in your Shooting phase. Target: one Grenades unit from your army that is not within Engagement Range of any enemy units and has not been selected to shoot this phase. Effect: select one enemy unit that is not within Engagement Range of any of your units and is within 8\" of and visible to your Grenades unit, then roll six D6: for each 4+, that enemy unit suffers 1 mortal wound."
+  {
+    "id": "t1",
+    "question": "What is the rule for grenades?",
+    "expected_route": "RULEBOOK",
+    "reference_answer": "Grenade is a 1 CP Core Wargear stratagem used in your Shooting phase. Target: one Grenades unit from your army that is not within Engagement Range of any enemy units and has not been selected to shoot this phase. Effect: select one enemy unit that is not within Engagement Range of any of your units and is within 8\" of and visible to your Grenades unit, then roll six D6: for each 4+, that enemy unit suffers 1 mortal wound."
   },
   {
-  "id": "t2",
-  "question": "How can I use a stratagem?",
-  "expected_route": "RULEBOOK",
-  "reference_answer": "Command points can be spent during the battle to use Stratagems. When you use a Stratagem, reduce your CP total by the amount listed on that Stratagem. If you do not have enough CP for a specific Stratagem, you cannot use it. You can use the same Stratagem multiple times during a battle, but you cannot use the same Stratagem more than once in the same phase."
+    "id": "t2",
+    "question": "How can I use a stratagem?",
+    "expected_route": "RULEBOOK",
+    "reference_answer": "Command points can be spent during the battle to use Stratagems. When you use a Stratagem, reduce your CP total by the amount listed on that Stratagem. If you do not have enough CP for a specific Stratagem, you cannot use it. You can use the same Stratagem multiple times during a battle, but you cannot use the same Stratagem more than once in the same phase."
   },
   {
-  "id": "t3",
-  "question": "What are the different ways to score points?",
-  "expected_route": "RULEBOOK",
-  "reference_answer": "Starting from the second battle round, at the end of each player’s Command phase, the player whose turn it is scores 1 Victory point (VP) for each objective marker they control (to a maximum of 3VP per turn). "
+    "id": "t3",
+    "question": "What are the different ways to score points?",
+    "expected_route": "RULEBOOK",
+    "reference_answer": "Starting from the second battle round, at the end of each player’s Command phase, the player whose turn it is scores 1 Victory point (VP) for each objective marker they control (to a maximum of 3VP per turn). "
   },
   {
-  "id": "t4",
-  "question": "What is the toughness of a space marine?",
-  "expected_route": "DATABASE",
-  "reference_answer": "The most common Toughness among Space Marine models is 4. Other Space Marine units have different values, from 2 up to 14."
+    "id": "t4",
+    "question": "What is the toughness of a space marine?",
+    "expected_route": "DATABASE",
+    "reference_answer": "The most common Toughness among Space Marine models is 4. Other Space Marine units have different values, from 2 up to 14."
   },
   {
     "id": "m1",
@@ -49,6 +49,67 @@
     "question": "How much does the Warhammer 40,000 starter set cost?",
     "expected_route": "RULEBOOK",
     "reference_answer": "This information is not available in the rulebook."
+  },
+  {
+    "id": "b1",
+    "origin": "both",
+    "question": "Can a Carnifex shoot while it is within Engagement Range of an enemy unit, and is there a penalty?",
+    "expected_route": "BOTH",
+    "reference_answer": "Yes. Because a Carnifex has the Monster keyword, under the Big Guns Never Tire rule it is eligible to shoot while within Engagement Range of enemy units, but it subtracts 1 from its Hit rolls unless shooting with a Pistol."
+  },
+  {
+    "id": "b2",
+    "origin": "both",
+    "question": "What wound roll do I need when attacking a Carnifex with a Strength 5 weapon?",
+    "expected_route": "BOTH",
+    "reference_answer": "A Carnifex has a Toughness of 9. Since the attacking weapon's Strength (5) is less than the target's Toughness (9) but more than half of it, an unmodified wound roll of 5+ is required."
+  },
+  {
+    "id": "b3",
+    "origin": "both",
+    "question": "If a Carnifex is hit by an attack with Armour Penetration -2, what saving throw roll does it need?",
+    "expected_route": "BOTH",
+    "reference_answer": "A Carnifex has a Save characteristic of 2+. An Armour Penetration (AP) of -2 worsens the saving throw roll by 2, meaning it needs a 4+ to succeed."
+  },
+  {
+    "id": "b4",
+    "origin": "both",
+    "question": "Can an Intercessor Squad use the Grenade stratagem, and how many dice do you roll for it?",
+    "expected_route": "BOTH",
+    "reference_answer": "Yes, an Intercessor Squad has the Grenades keyword, making it eligible to use the Grenade stratagem. When resolving the stratagem, you roll six D6 and inflict 1 mortal wound for each 4+."
+  },
+  {
+    "id": "b5",
+    "origin": "both",
+    "question": "If a full 5-model Intercessor Squad and a single Carnifex are contesting the same objective marker with no battle-shocked models, which unit controls it?",
+    "expected_route": "BOTH",
+    "reference_answer": "To control an objective marker, a player sums the Objective Control (OC) characteristics of all their models within range. Each Intercessor has OC 2 (total OC 10 for 5 models), while a Carnifex has OC 3, so the Intercessor Squad controls the objective."
+  },
+  {
+    "id": "b6",
+    "origin": "both",
+    "question": "When a Carnifex makes an Normal Move, how far can it move and can it move within Engagement Range of enemy models?",
+    "expected_route": "BOTH",
+    "reference_answer": "A Carnifex has a Movement characteristic of 8\", so it can move up to 8 inches when making a Normal Move, and under the Core Rules it cannot move within Engagement Range of any enemy models during a Normal Move."
+  },
+  {
+    "id": "b7",
+    "origin": "both",
+    "history": [
+      "What is the Toughness of a Carnifex?"
+    ],
+    "question": "What roll do I need to wound it with a Strength 9 attack?",
+    "expected_route": "BOTH",
+    "reference_answer": "A Carnifex has Toughness 9. Because the attack's Strength (9) is equal to the target's Toughness (9), you need a 4+ to wound."
+  },
+  {
+    "id": "b8",
+    "origin": "both",
+    "history": [
+      "How does the Grenade stratagem work?"
+    ],
+    "question": "Does a Carnifex have the keyword required to use it?",
+    "expected_route": "BOTH",
+    "reference_answer": "The Grenade stratagem requires the unit to have the Grenades keyword. A Carnifex does not have the Grenades keyword, so it cannot use this stratagem."
   }
-
 ]

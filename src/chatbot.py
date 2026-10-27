@@ -11,8 +11,14 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, System
 
 from config import MAX_HISTORY_TURNS
 from llm import get_llm, text_of
-from prompts import ANSWER_SQL_SYSTEM, ANSWER_SYSTEM, REWRITE_SYSTEM, REWRITE_USER
-from router import DATABASE, route
+from prompts import (
+    ANSWER_BOTH_SYSTEM,
+    ANSWER_SQL_SYSTEM,
+    ANSWER_SYSTEM,
+    REWRITE_SYSTEM,
+    REWRITE_USER,
+)
+from router import BOTH, DATABASE, RULEBOOK, route
 from sql_retriever import SQLResult, format_result, retrieve_sql
 from vectorstore import retrieve
 
@@ -21,9 +27,9 @@ from vectorstore import retrieve
 class Response:
     answer: str
     standalone_question: str  # the question actually used for routing and retrieval
-    route: str  # RULEBOOK or DATABASE
-    sources: list[Document] = field(default_factory=list)  # rulebook chunks (RULEBOOK route)
-    sql: SQLResult | None = None  # query and rows (DATABASE route)
+    route: str  # RULEBOOK, DATABASE, or BOTH
+    sources: list[Document] = field(default_factory=list)  # rulebook chunks
+    sql: SQLResult | None = None  # query and rows
 
 
 def format_context(docs: list[Document]) -> str:
@@ -45,7 +51,8 @@ class Chatbot:
         if not self.history:
             return question
         transcript = "\n".join(
-            f"{'User' if isinstance(m, HumanMessage) else 'Assistant'}: {m.content}" for m in self._recent_history()
+            f"{'User' if isinstance(m, HumanMessage) else 'Assistant'}: {m.content}"
+            for m in self._recent_history()
         )
         messages = [
             SystemMessage(REWRITE_SYSTEM),
@@ -57,24 +64,53 @@ class Chatbot:
         # 1. Rewrite follow-ups into standalone questions (multi-turn)
         standalone = self._rewrite(question)
 
-        # 2. Route: rulebook or database?
-        channel = route(standalone)
+        # 2. Route: rulebook, database, or both?
+        plan = route(standalone)
+        use_rules = plan.route in (RULEBOOK, BOTH)
+        use_db = plan.route in (DATABASE, BOTH)
 
-        # 3. Retrieve from the chosen channel and build the instructions
-        if channel == DATABASE:
-            sql = retrieve_sql(standalone)
-            docs = []
-            system = ANSWER_SQL_SYSTEM.format(query=sql.query, result=format_result(sql))
+        # 3. Retrieve from the active channels
+        docs = (
+            retrieve(getattr(plan, "rulebook_question", None) or standalone)
+            if use_rules
+            else []
+        )
+        sql = (
+            retrieve_sql(getattr(plan, "database_question", None) or standalone)
+            if use_db
+            else None
+        )
+
+        # Build prompt instructions based on the retrieved sources
+        if use_rules and use_db and sql is not None:
+            system = ANSWER_BOTH_SYSTEM.format(
+                context=format_context(docs),
+                query=sql.query,
+                result=format_result(sql),
+            )
+        elif use_db and sql is not None:
+            system = ANSWER_SQL_SYSTEM.format(
+                query=sql.query,
+                result=format_result(sql),
+            )
         else:
-            sql = None
-            docs = retrieve(standalone)
             system = ANSWER_SYSTEM.format(context=format_context(docs))
 
         # 4. Prompt = instructions + context, then history, then the question
-        messages = [SystemMessage(system), *self._recent_history(), HumanMessage(question)]
+        messages = [
+            SystemMessage(system),
+            *self._recent_history(),
+            HumanMessage(question),
+        ]
 
         # 5. Generate the answer and remember the turn
         answer = text_of(get_llm().invoke(messages))
         self.history += [HumanMessage(question), AIMessage(answer)]
 
-        return Response(answer=answer, standalone_question=standalone, route=channel, sources=docs, sql=sql)
+        return Response(
+            answer=answer,
+            standalone_question=standalone,
+            route=plan.route,
+            sources=docs,
+            sql=sql,
+        )

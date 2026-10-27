@@ -22,8 +22,10 @@ class FakeBot:
         return self.response
 
 
-def make_response(route="RULEBOOK", sources=(), sql=None, answer="An answer."):
-    return SimpleNamespace(route=route, sources=list(sources), sql=sql, answer=answer)
+def make_response(route="RULEBOOK", sources=(), sql=None, answer="An answer.", standalone_question="q"):
+    return SimpleNamespace(
+        route=route, sources=list(sources), sql=sql, answer=answer, standalone_question=standalone_question
+    )
 
 
 def doc(text):
@@ -43,6 +45,13 @@ DATABASE_ITEM = {
     "expected_route": "DATABASE",
     "reference_answer": "9",
     "source_table": "units",
+}
+BOTH_ITEM = {
+    "id": "b1",
+    "question": "Can a Carnifex shoot in Engagement Range?",
+    "expected_route": "BOTH",
+    "reference_answer": "Yes, with -1 to Hit.",
+    "source_text": "Big Guns Never Tire\n\nMonsters can shoot.",
 }
 
 
@@ -120,6 +129,17 @@ def test_database_question_with_working_query():
     assert result["retrieval_hit"] is None
 
 
+def test_both_question_scores_retrieval_and_sql():
+    sql = SimpleNamespace(query="SELECT keyword", error=None, rows=[("Monster",)])
+    bot = FakeBot(make_response(route="BOTH", sources=[doc(BOTH_ITEM["source_text"])], sql=sql))
+    result = evaluate_item(bot, BOTH_ITEM, always_correct)
+
+    assert result["route_ok"] is True
+    assert result["retrieval_hit"] is True
+    assert result["sql_ok"] is True
+    assert result["correct"] is True
+
+
 @pytest.mark.parametrize(
     "sql",
     [
@@ -136,7 +156,7 @@ def test_error_while_asking_is_recorded_not_raised():
     result = evaluate_item(FakeBot(error=ValueError("boom")), RULEBOOK_ITEM, always_correct)
 
     assert result["error"] == "boom"
-    assert result["correct"] is False
+    assert result["correct"] is None
     assert result["route_ok"] is False
 
 
@@ -169,17 +189,20 @@ def test_format_rate():
 
 def test_summarize_counts_each_metric_over_its_own_questions():
     results = [
-        {"route_ok": True, "retrieval_hit": True, "sql_ok": None, "correct": True, "error": None},
-        {"route_ok": True, "retrieval_hit": False, "sql_ok": None, "correct": False, "error": None},
-        {"route_ok": False, "retrieval_hit": None, "sql_ok": None, "correct": False, "error": None},
-        {"route_ok": True, "retrieval_hit": None, "sql_ok": True, "correct": None, "error": None},
-        {"route_ok": False, "retrieval_hit": None, "sql_ok": None, "correct": False, "error": "boom"},
+        {"expected_route": "RULEBOOK", "history": [], "route_ok": True, "retrieval_hit": True, "sql_ok": None, "correct": True, "error": None},
+        {"expected_route": "RULEBOOK", "history": [], "route_ok": True, "retrieval_hit": False, "sql_ok": None, "correct": False, "error": None},
+        {"expected_route": "RULEBOOK", "history": [], "route_ok": False, "retrieval_hit": None, "sql_ok": None, "correct": False, "error": None},
+        {"expected_route": "DATABASE", "history": [], "route_ok": True, "retrieval_hit": None, "sql_ok": True, "correct": None, "error": None},
+        {"expected_route": "BOTH", "history": [], "route_ok": False, "retrieval_hit": None, "sql_ok": None, "correct": False, "error": "boom"},
     ]
     summary = summarize(results)
 
     assert summary["n_questions"] == 5
     assert summary["n_errors"] == 1
     assert summary["routing_accuracy"]["passed"] == 3 and summary["routing_accuracy"]["total"] == 5
+    assert summary["routing_by_expected"]["RULEBOOK"] == {"passed": 2, "total": 3, "rate": 2 / 3}
+    assert summary["routing_by_expected"]["DATABASE"] == {"passed": 1, "total": 1, "rate": 1.0}
+    assert summary["routing_by_expected"]["BOTH"] == {"passed": 0, "total": 1, "rate": 0.0}
     assert summary["retrieval_hit_rate"]["passed"] == 1 and summary["retrieval_hit_rate"]["total"] == 2
     assert summary["sql_success_rate"]["passed"] == 1 and summary["sql_success_rate"]["total"] == 1
     assert summary["answer_correctness"]["passed"] == 1 and summary["answer_correctness"]["total"] == 4
@@ -205,6 +228,7 @@ def test_main_runs_every_question_and_saves_results(tmp_path, monkeypatch, capsy
 
     sleeps = []
     monkeypatch.setattr(evaluation, "load_questions", lambda: [RULEBOOK_ITEM, DATABASE_ITEM])
+    monkeypatch.setattr(evaluation, "load_manual_questions", lambda: [])
     monkeypatch.setattr(evaluation, "Chatbot", StubBot)
     monkeypatch.setattr(evaluation, "judge", always_correct)
     monkeypatch.setattr(evaluation, "EVAL_RESULTS_PATH", results_path)

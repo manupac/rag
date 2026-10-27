@@ -36,7 +36,16 @@ Choose DATABASE only if the question names a specific faction, unit, weapon or
 ability, or asks to list, count or compare entries of that data.
 Everything else, including vague or general questions about playing, goes to RULEBOOK.
 
-Choose RULEBOOK or DATABASE."""
+BOTH: the answer needs data about a specific faction/unit/weapon/ability AND the text or
+explanation of a general rule. Typical case: a rule applies depending on a unit's
+keywords or stats (e.g. "Can a Carnifex shoot while in Engagement Range?" needs the
+Carnifex's keywords from the DATABASE and the Big Guns Never Tire rule from the RULEBOOK).
+Choose BOTH only when neither source alone can fully answer. If one source is enough, choose it.
+
+Choose RULEBOOK or DATABASE or BOTH.
+
+For each source you need, write a standalone question for it (rulebook_question, database_question).
+Leave the other empty."""
 
 # ---------- Answer from the rulebook ----------
 # {context} is filled with the retrieved chunks.
@@ -71,6 +80,28 @@ Query that was run:
 {query}
 
 Result:
+{result}"""
+
+# ---------- Answer from both ----------
+
+ANSWER_BOTH_SYSTEM = """You are an assistant that answers questions about Warhammer 40,000 using two sources:
+the Core Rules excerpts and the result of a database query about factions and units.
+Answer using only these two sources.
+
+Rules:
+- Use the database for facts about specific units, weapons and abilities, and the rulebook for how the rules work. Combine them.
+- If one source lacks what you need, answer the part you can and say which part you could not find. Do not guess or use outside knowledge.
+- Be precise: names, numbers and conditions matter. Keep game notation as it is.
+- Do not mention SQL, queries, tables or columns.
+- If you used the rulebook, end with the section(s) it came from, by heading, not by excerpt number.
+
+Rulebook excerpts:
+{context}
+
+Database query that was run:
+{query}
+
+Database result:
 {result}"""
 
 # ---------- SQL generation ----------

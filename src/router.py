@@ -10,20 +10,21 @@ from prompts import ROUTER_SYSTEM
 
 RULEBOOK = "RULEBOOK"
 DATABASE = "DATABASE"
+BOTH = "BOTH"
 
 
 class Route(BaseModel):
-    """The model must answer with one of these two values: no text to parse."""
-
-    route: Literal["RULEBOOK", "DATABASE"] = Field(description="Where to look for the answer")
-
+    """The model must answer with one of these three values: no text to parse."""
+    route: Literal["RULEBOOK", "DATABASE", "BOTH"] = Field(description="Which source(s) are needed")
+    rulebook_question: str = Field(default="", description="Standalone question for the rulebook (empty if not needed)")
+    database_question: str = Field(default="", description="Standalone question for the unit database (empty if not needed)")
 
 def route(question: str) -> str:
-    """Return RULEBOOK or DATABASE. If the model gives no valid answer, use the rulebook."""
+    """Return RULEBOOK, DATABASE or BOTH. If the model gives no valid answer, use the rulebook."""
     router = get_llm().with_structured_output(Route)
     result = router.invoke([SystemMessage(ROUTER_SYSTEM), HumanMessage(question)])
-    return result.route if result else RULEBOOK
-
+    return result or Route(route=RULEBOOK)
+    
 
 def main():
     """Type questions and see which channel the router picks."""

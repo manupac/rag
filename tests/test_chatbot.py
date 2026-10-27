@@ -5,6 +5,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 import chatbot
 from chatbot import Chatbot, format_context
 from prompts import REWRITE_SYSTEM
+from router import Route
 from sql_retriever import SQLResult
 
 
@@ -18,9 +19,10 @@ def make_bot(monkeypatch, fake_llm):
     def build(replies, route_result="RULEBOOK"):
         llm = fake_llm(replies)
         routed, retrieved = [], []
+        plan = Route(route=route_result) if isinstance(route_result, str) else route_result
 
         monkeypatch.setattr(chatbot, "get_llm", lambda: llm)
-        monkeypatch.setattr(chatbot, "route", lambda q: routed.append(q) or route_result)
+        monkeypatch.setattr(chatbot, "route", lambda q: routed.append(q) or plan)
 
         def fake_retrieve(q):
             retrieved.append(q)
@@ -30,7 +32,7 @@ def make_bot(monkeypatch, fake_llm):
         monkeypatch.setattr(
             chatbot,
             "retrieve_sql",
-            lambda q: SQLResult(query="SELECT 1", columns=["a"], rows=[(1,)]),
+            lambda q: SQLResult(query=f"SELECT 1 -- {q}", columns=["a"], rows=[(1,)]),
         )
         return Chatbot(), llm, routed, retrieved
 
@@ -151,7 +153,27 @@ def test_database_route_uses_sql_and_not_the_vector_store(make_bot):
     response = bot.ask("What is the toughness of a Carnifex?")
 
     assert response.route == "DATABASE"
-    assert response.sql.query == "SELECT 1"
+    assert "SELECT 1" in response.sql.query
     assert response.sources == []
     assert retrieved == []  # the rulebook retriever was never called
     assert "SELECT 1" in llm.calls[0][0].content  # the query is part of the answer prompt
+
+
+# ---------- ask: both route ----------
+
+
+def test_both_route_uses_both_retrievers_and_sub_questions(make_bot):
+    plan = Route(
+        route="BOTH",
+        rulebook_question="How does the wound roll work?",
+        database_question="What is the toughness of a Carnifex?",
+    )
+    bot, llm, _, retrieved = make_bot(["You need a 5+."], route_result=plan)
+    response = bot.ask("What roll do I need to wound a Carnifex with Strength 5?")
+
+    assert response.route == "BOTH"
+    assert retrieved == ["How does the wound roll work?"]
+    assert "What is the toughness of a Carnifex?" in response.sql.query
+    assert len(response.sources) == 1
+    assert "Roll a D6." in llm.calls[0][0].content
+    assert "SELECT 1" in llm.calls[0][0].content
