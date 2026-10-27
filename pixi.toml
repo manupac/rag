@@ -29,3 +29,9 @@ rank-bm25 = ">=0.2.2, <0.3"
 [tool.ruff] 
 line-length = 120
 
+[feature.eval.pypi-dependencies]
+ragas = "==0.4.3"
+langchain-community = "==0.3.31"
+
+[environments]
+eval = ["eval"]

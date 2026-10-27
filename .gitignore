@@ -15,5 +15,8 @@ chroma_db_rulebook/
 .vscode/
 .DS_Store
 
-data/
+data/*
+!data/parsed/
+data/parsed/*
+!data/parsed/rulebook_final.md
 src/chunking/.env
