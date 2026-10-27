@@ -1,0 +1,54 @@
+[
+    {
+  "id": "t1",
+  "question": "What is the rule for grenades?",
+  "expected_route": "RULEBOOK",
+  "reference_answer": "Grenade is a 1 CP Core Wargear stratagem used in your Shooting phase. Target: one Grenades unit from your army that is not within Engagement Range of any enemy units and has not been selected to shoot this phase. Effect: select one enemy unit that is not within Engagement Range of any of your units and is within 8\" of and visible to your Grenades unit, then roll six D6: for each 4+, that enemy unit suffers 1 mortal wound."
+  },
+  {
+  "id": "t2",
+  "question": "How can I use a stratagem?",
+  "expected_route": "RULEBOOK",
+  "reference_answer": "Command points can be spent during the battle to use Stratagems. When you use a Stratagem, reduce your CP total by the amount listed on that Stratagem. If you do not have enough CP for a specific Stratagem, you cannot use it. You can use the same Stratagem multiple times during a battle, but you cannot use the same Stratagem more than once in the same phase."
+  },
+  {
+  "id": "t3",
+  "question": "What are the different ways to score points?",
+  "expected_route": "RULEBOOK",
+  "reference_answer": "Starting from the second battle round, at the end of each player’s Command phase, the player whose turn it is scores 1 Victory point (VP) for each objective marker they control (to a maximum of 3VP per turn). "
+  },
+  {
+  "id": "t4",
+  "question": "What is the toughness of a space marine?",
+  "expected_route": "DATABASE",
+  "reference_answer": "The most common Toughness among Space Marine models is 4. Other Space Marine units have different values, from 2 up to 14."
+  },
+  {
+    "id": "m1",
+    "origin": "multi-turn",
+    "history": [
+      "What are the stats of a Carnifex?"
+    ],
+    "question": "And what is its save?",
+    "expected_route": "DATABASE",
+    "reference_answer": "The Carnifex has a 2+ save."
+  },
+  {
+    "id": "m2",
+    "origin": "multi-turn",
+    "history": [
+      "How does the Grenade stratagem work?"
+    ],
+    "question": "How much does it cost?",
+    "expected_route": "RULEBOOK",
+    "reference_answer": "The Grenade stratagem costs 1 CP."
+  },
+  {
+    "id": "m3",
+    "origin": "unanswerable",
+    "question": "How much does the Warhammer 40,000 starter set cost?",
+    "expected_route": "RULEBOOK",
+    "reference_answer": "This information is not available in the rulebook."
+  }
+
+]

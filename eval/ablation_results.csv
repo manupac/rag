@@ -1,0 +1,8 @@
+experiment,chunk_size,chunk_overlap,k,search_type,hit_rate,mean_coverage,avg_context_chars,n_questions
+baseline,800,100,5,vector,0.95,0.95,2691,40
+k=3,800,100,3,vector,0.925,0.9291666666666668,1591,40
+k=8,800,100,8,vector,1.0,1.0,4235,40
+chunk size 400,400,100,5,vector,0.925,0.8580555555555556,1619,40
+chunk size 1200,1200,100,5,vector,0.975,0.975,3272,40
+overlap 0,800,0,5,vector,0.95,0.95,2687,40
+hybrid search,800,100,5,hybrid,0.95,0.9591666666666667,2850,40

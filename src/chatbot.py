@@ -1,0 +1,80 @@
+"""The chatbot: rewrite the question, route it, retrieve from the rulebook or the database,
+build the prompt and call the LLM.
+
+The Chatbot object keeps the conversation history, which is what makes it multi-turn.
+"""
+
+from dataclasses import dataclass, field
+
+from langchain_core.documents import Document
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+
+from config import MAX_HISTORY_TURNS
+from llm import get_llm, text_of
+from prompts import ANSWER_SQL_SYSTEM, ANSWER_SYSTEM, REWRITE_SYSTEM, REWRITE_USER
+from router import DATABASE, route
+from sql_retriever import SQLResult, format_result, retrieve_sql
+from vectorstore import retrieve
+
+
+@dataclass
+class Response:
+    answer: str
+    standalone_question: str  # the question actually used for routing and retrieval
+    route: str  # RULEBOOK or DATABASE
+    sources: list[Document] = field(default_factory=list)  # rulebook chunks (RULEBOOK route)
+    sql: SQLResult | None = None  # query and rows (DATABASE route)
+
+
+def format_context(docs: list[Document]) -> str:
+    return "\n\n".join(f"[{i}] {doc.page_content}" for i, doc in enumerate(docs, start=1))
+
+
+class Chatbot:
+    def __init__(self):
+        self.history: list[BaseMessage] = []
+
+    def reset(self) -> None:
+        self.history = []
+
+    def _recent_history(self) -> list[BaseMessage]:
+        return self.history[-2 * MAX_HISTORY_TURNS :]  # one turn = question + answer
+
+    def _rewrite(self, question: str) -> str:
+        """Make a follow-up question understandable without the conversation."""
+        if not self.history:
+            return question
+        transcript = "\n".join(
+            f"{'User' if isinstance(m, HumanMessage) else 'Assistant'}: {m.content}" for m in self._recent_history()
+        )
+        messages = [
+            SystemMessage(REWRITE_SYSTEM),
+            HumanMessage(REWRITE_USER.format(transcript=transcript, question=question)),
+        ]
+        return text_of(get_llm().invoke(messages)).strip()
+
+    def ask(self, question: str) -> Response:
+        # 1. Rewrite follow-ups into standalone questions (multi-turn)
+        standalone = self._rewrite(question)
+
+        # 2. Route: rulebook or database?
+        channel = route(standalone)
+
+        # 3. Retrieve from the chosen channel and build the instructions
+        if channel == DATABASE:
+            sql = retrieve_sql(standalone)
+            docs = []
+            system = ANSWER_SQL_SYSTEM.format(query=sql.query, result=format_result(sql))
+        else:
+            sql = None
+            docs = retrieve(standalone)
+            system = ANSWER_SYSTEM.format(context=format_context(docs))
+
+        # 4. Prompt = instructions + context, then history, then the question
+        messages = [SystemMessage(system), *self._recent_history(), HumanMessage(question)]
+
+        # 5. Generate the answer and remember the turn
+        answer = text_of(get_llm().invoke(messages))
+        self.history += [HumanMessage(question), AIMessage(answer)]
+
+        return Response(answer=answer, standalone_question=standalone, route=channel, sources=docs, sql=sql)

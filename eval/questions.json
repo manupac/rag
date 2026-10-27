@@ -1,0 +1,72 @@
+[
+  {
+    "question": "What is the maximum percentage of an army's total points that can be placed into Strategic Reserves before the battle begins?",
+    "expected_route": "RULEBOOK",
+    "reference_answer": "The combined points value of all units placed into Strategic Reserves before the battle cannot exceed 25% of your total points limit for your chosen battle size.",
+    "source_text": "STRATEGIC RESERVES > PLACING UNITS INTO STRATEGIC RESERVES\n\nBefore the battle, when you are instructed to Declare Battle Formations, you can select one or more units from your army to be placed into Strategic Reserves (excluding **Fortifications**).  \nThe combined points value of all the units you wish to place into Strategic Reserves before the battle (including those embarked within **Transport** models that are themselves placed into Strategic Reserves) cannot exceed 25% of your total points limit for your chosen battle size, as shown in the table below.",
+    "id": "q1"
+  },
+  {
+    "question": "When do players gain Command points during a battle, and how many do they receive?",
+    "expected_route": "RULEBOOK",
+    "reference_answer": "At the very start of each player's Command phase, before any other actions are taken, both players gain 1CP. Command points are a strategic resource used to trigger Stratagems throughout the game.",
+    "source_text": "COMMAND PHASE > 1. COMMAND\n\nAt the start of your Command phase, before doing anything else, both players gain 1CP. Command points are a strategic resource that you can spend during the battle to use Stratagems. You can find out more about Stratagems on pages 41-42.  \nThen, if you have any other rules that need to be resolved in the Command phase, you do so now before progressing to the Battle-shock step.  \n- Both players gain 1CP.\n- Resolve any other rules that occur in the Command phase.",
+    "id": "q2"
+  },
+  {
+    "question": "Can Monster and Vehicle units make ranged attacks while they are engaged in melee combat with enemy units?",
+    "expected_route": "RULEBOOK",
+    "reference_answer": "Yes, Monster and Vehicle units are still eligible to shoot during their Shooting phase even while within Engagement Range of enemy units. However, unless using a Pistol, 1 is subtracted from their ranged attack Hit rolls if they were within Engagement Range when selecting targets.",
+    "source_text": "SHOOTING PHASE > BIG GUNS NEVER TIRE\n\n*Monsters and war engines can dispense death from afar even as they trample the masses before them.*  \n**Monster** and **Vehicle** units are eligible to shoot in their controlling player's Shooting phase even while they are within Engagement Range of one or more enemy units. Ranged weapons equipped by **Monster** and **Vehicle** units can target one or more of the enemy units they are within Engagement Range of, even if other friendly units are also within Engagement Range of the same enemy unit. Each time a **Monster** or **Vehicle** model makes a ranged attack, if its unit was within Engagement Range of one or more enemy units when it selected its targets, unless that attack is made with a Pistol (pg 25), subtract 1 from that attack's Hit roll.",
+    "id": "q3"
+  },
+  {
+    "question": "Where must Aircraft models be set up when the battle begins, and how do they function subsequently?",
+    "expected_route": "RULEBOOK",
+    "reference_answer": "Aircraft models must start the battle in Reserves rather than on the battlefield. Once the battle begins, they are treated as Strategic Reserves units for all rules purposes.",
+    "source_text": "TERRAIN FEATURES > DEPLOYING AIRCRAFT\n\nWhen you are instructed to Declare Battle Formations, **Aircraft** models must start the battle in Reserves instead of being set up on the battlefield. Once the battle has started, **Aircraft** models are then treated as Strategic Reserves units for all rules purposes (pg 43). Only units that are themselves placed into Reserves can start the battle embarked within **Aircraft Transport** models that are in Reserves.",
+    "id": "q4"
+  },
+  {
+    "question": "What is the maximum amount a hit roll can be modified by in either direction?",
+    "expected_route": "RULEBOOK",
+    "reference_answer": "A hit roll can never be modified by more than -1 or +1.",
+    "source_text": "SHOOTING PHASE > BIG GUNS NEVER TIRE > 1. HIT ROLL\n\nAn unmodified Hit roll of 6 is called a Critical Hit and is always successful. An unmodified Hit roll of 1 always fails. A Hit roll can never be modified by more than -1 or +1.  \n- **Hit Roll (Ranged Attack):** A hit is scored if the D6 result equals or exceeds that attack’s BS.  \n- **Hit Roll (Melee Attack):** A hit is scored if the D6 result equals or exceeds that attack’s WS.  \n- **Critical Hit:** Unmodified Hit roll of 6. Always successful.  \n- An unmodified Hit roll of 1 always fails.  \n- A Hit roll can never be modified by more than -1 or +1.",
+    "id": "q5"
+  },
+  {
+    "question": "What is the maximum distance from which a model with the Lone Operative ability can be targeted by a ranged attack?",
+    "expected_route": "RULEBOOK",
+    "reference_answer": "A model with the Lone Operative ability can only be selected as the target of a ranged attack if the attacking model is within 12 inches, provided the unit is not part of an Attached unit.",
+    "source_text": "SHOOTING PHASE > LONE OPERATIVE\n\n*Assassins and other covert agents are difficult to track and pinpoint in the swirling maelstrom of battle.*  \nUnless part of an Attached unit (see Leader, page 39), this unit can only be selected as the target of a ranged attack if the attacking model is within 12\".",
+    "id": "q6"
+  },
+  {
+    "question": "What is the effect of the Emperor's Children ability named Thrill Seekers?",
+    "expected_route": "DATABASE",
+    "reference_answer": "If your Army Faction is Emperor’s Children, this unit is eligible to shoot and declare a charge in a turn in which it Advanced or Fell Back, but cannot target a unit it was within Engagement Range of at the start of the turn or a unit that was the target of another unit.",
+    "source_table": "abilities",
+    "id": "q7"
+  },
+  {
+    "question": "What is the point cost of the Starflare Ignition System enhancement for the T'au Empire?",
+    "expected_route": "DATABASE",
+    "reference_answer": "20",
+    "source_table": "enhancements",
+    "id": "q8"
+  },
+  {
+    "question": "What is the exact rules text for the Fog of Dreams (Psychic) ability?",
+    "expected_route": "DATABASE",
+    "reference_answer": "While this model is leading a unit, that unit can only be selected as the target of a ranged attack if the attacking model is within 18\".",
+    "source_table": "datasheets_abilities",
+    "id": "q9"
+  },
+  {
+    "question": "What is the Movement characteristic of Flesh Hounds?",
+    "expected_route": "DATABASE",
+    "reference_answer": "Flesh Hounds have a Movement characteristic of 12\".",
+    "source_table": "datasheets_models",
+    "id": "q10"
+  }
+]
