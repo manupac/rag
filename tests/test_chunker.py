@@ -22,6 +22,15 @@ def test_removes_strikethrough_markers():
     assert clean_markdown("~~Rule~~s") == "Rules"
 
 
+def test_removes_page_numbers_parsed_as_headers():
+    assert clean_markdown("text\n# 12\nmore") == "text\nmore"
+    assert clean_markdown("a\n## **33**\nb") == "a\nb"
+
+
+def test_keeps_headers_that_only_start_with_a_number():
+    assert clean_markdown("## 3 Phases\nbody") == "## 3 Phases\nbody"
+
+
 def test_collapses_blank_lines():
     assert clean_markdown("a\n\n\n\nb") == "a\n\nb"
 
@@ -69,6 +78,18 @@ def test_long_sections_are_split_and_keep_their_header(tmp_path, monkeypatch):
     for chunk in chunks:
         assert chunk.page_content.startswith("Big\n\n")
         assert len(chunk.page_content) <= CHUNK_SIZE + header_length
+
+
+def test_custom_chunk_size_is_used_instead_of_the_config(tmp_path, monkeypatch):
+    long_body = "word " * 600
+    write_rulebook(tmp_path, monkeypatch, f"# Big\n\n{long_body}\n")
+
+    default_chunks = create_chunks()
+    small_chunks = create_chunks(chunk_size=200, chunk_overlap=0)
+
+    assert len(small_chunks) > len(default_chunks)
+    header_length = len("Big\n\n")
+    assert all(len(c.page_content) <= 200 + header_length for c in small_chunks)
 
 
 def test_page_markers_never_reach_the_chunks(tmp_path, monkeypatch):

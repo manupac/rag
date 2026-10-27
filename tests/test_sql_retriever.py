@@ -6,6 +6,7 @@ import sql_retriever
 from sql_retriever import (
     SQLResult,
     extract_sql,
+    faction_names,
     fix_text,
     format_result,
     retrieve_sql,
@@ -29,8 +30,10 @@ def db(tmp_path, monkeypatch):
 
     monkeypatch.setattr(sql_retriever, "SQLITE_PATH", path)
     schema_description.cache_clear()
+    faction_names.cache_clear()
     yield path
     schema_description.cache_clear()
+    faction_names.cache_clear()
 
 
 # ---------- extract_sql ----------
@@ -71,7 +74,9 @@ def test_fix_text_passes_non_strings_through():
 # ---------- run_query ----------
 
 
-@pytest.mark.parametrize("query", ["DELETE FROM units", "DROP TABLE units", "UPDATE units SET name='x'", "", "PRAGMA table_info(units)"])
+@pytest.mark.parametrize(
+    "query", ["DELETE FROM units", "DROP TABLE units", "UPDATE units SET name='x'", "", "PRAGMA table_info(units)"]
+)
 def test_run_query_rejects_non_select(db, query):
     with pytest.raises(ValueError):
         run_query(query)
@@ -111,7 +116,7 @@ def test_database_is_read_only_even_for_with_delete(db):
     assert len(rows) == 5  # nothing was deleted
 
 
-# ---------- schema_description ----------
+# ---------- schema_description / faction_names ----------
 
 
 def test_schema_description_lists_columns_and_sample_rows(db):
@@ -120,6 +125,16 @@ def test_schema_description_lists_columns_and_sample_rows(db):
     assert "Carnifex | 9" in description
     assert "Hormagaunt | 3" in description
     assert "Genestealer" not in description  # only SAMPLE_ROWS (2) examples are shown
+
+
+def test_faction_names_are_sorted_and_comma_separated(db):
+    conn = sqlite3.connect(db)
+    conn.execute("CREATE TABLE factions (name TEXT)")
+    conn.executemany("INSERT INTO factions VALUES (?)", [("Tyranids",), ("Necrons",)])
+    conn.commit()
+    conn.close()
+
+    assert faction_names() == "Necrons, Tyranids"
 
 
 # ---------- format_result ----------
@@ -158,7 +173,13 @@ def test_format_result_repairs_mojibake():
 def use_llm(monkeypatch, fake_llm):
     def install(replies):
         llm = fake_llm(replies)
-        monkeypatch.setattr(sql_retriever, "get_llm", lambda: llm)
+        llm.models = []  # the model names retrieve_sql asked for
+
+        def get_llm(model=None):
+            llm.models.append(model)
+            return llm
+
+        monkeypatch.setattr(sql_retriever, "get_llm", get_llm)
         monkeypatch.setattr(sql_retriever, "system_prompt", lambda: "system prompt")
         return llm
 
@@ -172,6 +193,22 @@ def test_retrieve_sql_success_on_first_try(db, use_llm):
     assert result.error is None
     assert result.rows == [("Carnifex",)]
     assert len(llm.calls) == 1
+
+
+def test_retrieve_sql_uses_the_sql_model(db, use_llm):
+    llm = use_llm(["SELECT 1"])
+    retrieve_sql("question")
+
+    assert llm.models == [sql_retriever.SQL_MODEL]
+
+
+def test_retrieve_sql_sends_system_prompt_then_question(db, use_llm):
+    llm = use_llm(["SELECT 1"])
+    retrieve_sql("Which unit has toughness 9?")
+
+    system_message, human_message = llm.calls[0]
+    assert system_message.content == "system prompt"
+    assert "Which unit has toughness 9?" in human_message.content
 
 
 def test_retrieve_sql_handles_fenced_reply(db, use_llm):
