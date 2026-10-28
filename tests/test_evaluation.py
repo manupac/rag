@@ -148,7 +148,7 @@ def test_rulebook_question_routed_right_and_chunk_retrieved():
     assert result["sql_ok"] is None
     assert result["correct"] is True
     assert bot.reset_calls == 1  # history is cleared before each question
-
+    assert RULEBOOK_ITEM["source_text"] in result["retrieved_contexts"]
 
 def test_rulebook_question_where_the_chunk_was_not_retrieved():
     bot = FakeBot(make_response(sources=[doc("unrelated chunk")]))
@@ -167,7 +167,7 @@ def test_question_without_source_text_has_no_retrieval_metric():
 
 
 def test_wrong_route_leaves_retrieval_and_sql_metrics_empty():
-    sql = SimpleNamespace(query="SELECT 1", error=None, rows=[(1,)])
+    sql = SimpleNamespace(query="SELECT 1", error=None, rows=[(1,)], columns=["x"], truncated=False)    
     bot = FakeBot(make_response(route="DATABASE", sql=sql))
     result = evaluate_item(bot, RULEBOOK_ITEM, always_correct)
 
@@ -178,7 +178,7 @@ def test_wrong_route_leaves_retrieval_and_sql_metrics_empty():
 
 
 def test_database_question_with_working_query():
-    sql = SimpleNamespace(query="SELECT toughness", error=None, rows=[("9",)])
+    sql = SimpleNamespace(query="SELECT toughness", error=None, rows=[("9",)], columns=["x"], truncated=False)
     result = evaluate_item(FakeBot(make_response(route="DATABASE", sql=sql)), DATABASE_ITEM, always_correct)
 
     assert result["route_ok"] is True
@@ -187,7 +187,7 @@ def test_database_question_with_working_query():
 
 
 def test_both_question_scores_retrieval_and_sql():
-    sql = SimpleNamespace(query="SELECT keyword", error=None, rows=[("Monster",)])
+    sql = SimpleNamespace(query="SELECT keyword", error=None, rows=[("Monster",)], columns=["x"], truncated=False)
     bot = FakeBot(make_response(route="BOTH", sources=[doc(BOTH_ITEM["source_text"])], sql=sql))
     result = evaluate_item(bot, BOTH_ITEM, always_correct)
 
@@ -338,7 +338,7 @@ class StubBot:
 def run_main(tmp_path, monkeypatch, sleeps):
     """Prepares evaluation.main() with fake questions, a stub bot and a temporary results file."""
     results_path = tmp_path / "results.json"
-    sql = SimpleNamespace(query="SELECT 1", error=None, rows=[("9",)])
+    sql = SimpleNamespace(query="SELECT 1", error=None, rows=[("9",)], columns=["x"], truncated=False)    
     StubBot.asked = []
     StubBot.responses = {
         RULEBOOK_ITEM["question"]: make_response(sources=[doc(RULEBOOK_ITEM["source_text"])]),

@@ -30,6 +30,7 @@ from config import EVAL_PAUSE_SECONDS, EVAL_RESULTS_PATH
 from eval_dataset import load_manual_questions, load_questions
 from llm import DailyQuotaError, call_with_retry, get_judge_llm, text_of
 from router import BOTH, DATABASE, RULEBOOK
+from sql_retriever import format_result
 
 RULES_ROUTES = {RULEBOOK, BOTH}
 DATA_ROUTES = {DATABASE, BOTH}
@@ -108,6 +109,7 @@ def evaluate_item(bot, item: dict, judge_fn=None) -> dict:
         "correct": None,
         "judge_reply": None,
         "error": None,
+        "retrieved_contexts": []
     }
 
     bot.reset()  # every test starts a new conversation
@@ -125,6 +127,9 @@ def evaluate_item(bot, item: dict, judge_fn=None) -> dict:
     result["route"] = response.route
     result["route_ok"] = response.route == item["expected_route"]
     result["answer"] = response.answer
+    result["retrieved_contexts"] = [doc.page_content for doc in response.sources] # will help RAGAS later on
+    if response.sql is not None:
+        result["retrieved_contexts"].append(format_result(response.sql))
 
     # hand-written questions have no source chunk, so retrieval can't be checked for them
     if result["route_ok"] and item["expected_route"] in RULES_ROUTES and item.get("source_text"):
