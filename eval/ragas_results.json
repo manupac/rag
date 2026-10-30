@@ -1,0 +1,151 @@
+{
+  "summary": {
+    "faithfulness": {
+      "overall": {
+        "mean": 0.844179894179894,
+        "n": 18
+      },
+      "RULEBOOK": {
+        "mean": 0.8727272727272727,
+        "n": 11
+      },
+      "DATABASE": {
+        "mean": null,
+        "n": 0
+      },
+      "BOTH": {
+        "mean": 0.7993197278911566,
+        "n": 7
+      }
+    },
+    "context_recall": {
+      "overall": {
+        "mean": 0.9722222222222222,
+        "n": 18
+      },
+      "RULEBOOK": {
+        "mean": 1.0,
+        "n": 11
+      },
+      "DATABASE": {
+        "mean": null,
+        "n": 0
+      },
+      "BOTH": {
+        "mean": 0.9285714285714286,
+        "n": 7
+      }
+    },
+    "factual_correctness": {
+      "overall": {
+        "mean": 0.7505555555555556,
+        "n": 18
+      },
+      "RULEBOOK": {
+        "mean": 0.7818181818181817,
+        "n": 11
+      },
+      "DATABASE": {
+        "mean": null,
+        "n": 0
+      },
+      "BOTH": {
+        "mean": 0.7014285714285714,
+        "n": 7
+      }
+    }
+  },
+  "scores": {
+    "q1": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 0.67
+    },
+    "q2": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 0.67
+    },
+    "q3": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 0.75
+    },
+    "q4": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 0.5
+    },
+    "q5": {
+      "faithfulness": 0.6,
+      "context_recall": 1.0,
+      "factual_correctness": 0.67
+    },
+    "q6": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 1.0
+    },
+    "t1": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 1.0
+    },
+    "t2": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 1.0
+    },
+    "t3": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 0.67
+    },
+    "m2": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 0.67
+    },
+    "m3": {
+      "faithfulness": 0.0,
+      "context_recall": 1.0,
+      "factual_correctness": 1.0
+    },
+    "b1": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 0.83
+    },
+    "b2": {
+      "faithfulness": 0.7142857142857143,
+      "context_recall": 0.5,
+      "factual_correctness": 0.55
+    },
+    "b3": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 0.44
+    },
+    "b4": {
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "factual_correctness": 0.73
+    },
+    "b5": {
+      "faithfulness": 0.4166666666666667,
+      "context_recall": 1.0,
+      "factual_correctness": 0.74
+    },
+    "b6": {
+      "faithfulness": 0.75,
+      "context_recall": 1.0,
+      "factual_correctness": 0.89
+    },
+    "b7": {
+      "faithfulness": 0.7142857142857143,
+      "context_recall": 1.0,
+      "factual_correctness": 0.73
+    },
+    "b8": {}
+  }
+}
