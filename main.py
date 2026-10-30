@@ -18,11 +18,15 @@ def main():
             "eval",
             "ablation-generate",
             "ablation",
+            "ragas",  # Added missing comma here
         ],
-        help="parse: PDF to Markdown | chunk: show chunk stats | index: build the vector store | "
-        "inspect: check retrieval | chat: talk to the bot | sql: test SQL queries on the database | "
-        "eval-generate: build the test questions | eval: run the evaluation | "
-        "ablation-generate: build the retrieval comparison questions | ablation: compare retrieval settings",
+        help=(
+            "parse: PDF to Markdown | chunk: show chunk stats | index: build the vector store | "
+            "inspect: check retrieval | chat: talk to the bot | sql: test SQL queries on the database | "
+            "eval-generate: build the test questions | eval: run the evaluation | "
+            "ablation-generate: build the retrieval comparison questions | ablation: compare retrieval settings | "
+            "ragas: second opinion on eval results with RAGAS"
+        ),  # Combined the description into a single string for the help parameter
     )
     parser.add_argument("ids", nargs="*", help="eval-generate only: ids of questions to replace, e.g. q3 q7")
     args = parser.parse_args()
@@ -44,6 +48,11 @@ def main():
         from eval_dataset import main
 
         main(args.ids)  # with ids: replace only those questions
+        return
+    elif args.command == "ragas":
+        from ragas_eval import main
+
+        main(args.ids)  # with ids: only those questions
         return
     elif args.command == "eval":
         from evaluation import main as run
